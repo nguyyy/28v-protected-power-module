@@ -1,0 +1,26 @@
+# LTspice scratch output (results we keep are exported to sim/results)
+*.raw
+*.log
+*.op.raw
+*.net
+*.fft
+*.plt.bak
+sim/**/*.tmp
+
+# KiCad
+*-backups/
+*.kicad_prl
+fp-info-cache
+*.lck
+_autosave-*
+\#auto_saved_files\#
+
+# STM32CubeIDE build output
+fw/**/Debug/
+fw/**/Release/
+fw/**/.settings/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
