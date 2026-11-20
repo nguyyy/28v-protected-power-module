@@ -25,7 +25,7 @@ severities, which is the usual stand-in for a 28 V bus outside of aerospace.
 | Fast spike | +112 V, 50 µs, 2 Ω source (ISO 7637-2 pulse 2a). No damage, outputs stay in regulation |
 | Protected bus clamp | 38 V ±1 V during any overvoltage |
 | Electronic breaker | Trips at 2.5 A ±20 %, auto-retry, folds back into a dead short |
-| Resettable fuse | PTC, 1.85 A hold / 3.7 A trip, ≥ 72 V rated. Backup for faults the breaker cannot see |
+| Resettable fuse | PTC, 2.5 A hold / 5 A trip, 72 V rated. Backup for faults the breaker cannot see |
 
 ## Outputs
 

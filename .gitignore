@@ -24,3 +24,4 @@ fw/**/.settings/
 __pycache__/
 *.pyc
 .venv/
+datasheets/
