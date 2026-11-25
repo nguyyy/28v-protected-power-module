@@ -1,0 +1,373 @@
+[
+  {
+    "spec": "Startup",
+    "item": "5V0 in regulation after UVLO crossing",
+    "measured": "7.16 ms",
+    "limit": "≤ 10 ms",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "5V0 overshoot",
+    "measured": "+0.09 %",
+    "limit": "≤ 3 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "5V0 monotonic (largest dip during rise)",
+    "measured": "11.8 mV",
+    "limit": "≤ 1 % of rail",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "5V0 starts after input switch is fully on",
+    "measured": "+0.12 ms after ENOUT",
+    "limit": "after ENOUT",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Outputs",
+    "item": "5V0 ripple at full load",
+    "measured": "7.7 mVpp",
+    "limit": "< 20 mVpp",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Outputs",
+    "item": "5V0 DC at 28 V, full load",
+    "measured": "5.001 V",
+    "limit": "5.00 V ± 2 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "3V3 in regulation after UVLO crossing",
+    "measured": "7.15 ms",
+    "limit": "≤ 10 ms",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "3V3 overshoot",
+    "measured": "+0.16 %",
+    "limit": "≤ 3 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "3V3 monotonic (largest dip during rise)",
+    "measured": "20.3 mV",
+    "limit": "≤ 1 % of rail",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Startup",
+    "item": "3V3 starts after input switch is fully on",
+    "measured": "+0.11 ms after ENOUT",
+    "limit": "after ENOUT",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Outputs",
+    "item": "3V3 ripple at full load",
+    "measured": "4.7 mVpp",
+    "limit": "< 20 mVpp",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Outputs",
+    "item": "3V3 DC at 28 V, full load",
+    "measured": "3.303 V",
+    "limit": "3.30 V ± 2 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Outputs",
+    "item": "Efficiency, 28 V in, both rails full load",
+    "measured": "94.9 % (13.31 W / 14.02 W)",
+    "limit": "≥ 85 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Input",
+    "item": "Inrush peak (bus caps charging)",
+    "measured": "0.63 A",
+    "limit": "< 2.5 A breaker",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Telemetry",
+    "item": "IIN_MON reading vs actual bus current",
+    "measured": "0.500 A vs 0.500 A (-0.0 %)",
+    "limit": "± 3 %",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Telemetry",
+    "item": "Highest voltage on any telemetry pin",
+    "measured": "2.50 V",
+    "limit": "≤ 3.3 V (+0.3 V)",
+    "ok": true,
+    "bench": "system"
+  },
+  {
+    "spec": "Input",
+    "item": "Pulse 2a: TVS clamp (FET drain)",
+    "measured": "98.9 V, 19.4 A peak",
+    "limit": "Q1 ≤ 150 V",
+    "ok": true,
+    "bench": "pulse2a"
+  },
+  {
+    "spec": "Input",
+    "item": "Pulse 2a: protected bus peak",
+    "measured": "28.3 V",
+    "limit": "≤ 39 V",
+    "ok": true,
+    "bench": "pulse2a"
+  },
+  {
+    "spec": "Input",
+    "item": "Pulse 2a: LTC4364 VCC peak",
+    "measured": "39.6 V",
+    "limit": "≤ 80 V (100 V abs max)",
+    "ok": true,
+    "bench": "pulse2a"
+  },
+  {
+    "spec": "Input",
+    "item": "Pulse 2a: 5V0 during the spike",
+    "measured": "4.996–5.005 V (0.10 %)",
+    "limit": "± 2 %",
+    "ok": true,
+    "bench": "pulse2a"
+  },
+  {
+    "spec": "Input",
+    "item": "Pulse 2a: 3V3 during the spike",
+    "measured": "3.300–3.305 V (0.16 %)",
+    "limit": "± 2 %",
+    "ok": true,
+    "bench": "pulse2a"
+  },
+  {
+    "spec": "Input",
+    "item": "Load dump: bus clamp",
+    "measured": "38.09–38.09 V",
+    "limit": "38 V ± 1 V",
+    "ok": true,
+    "bench": "loaddump"
+  },
+  {
+    "spec": "Input",
+    "item": "Load dump: bus never drops out",
+    "measured": "min 27.3 V",
+    "limit": "≥ 16 V (rails' range)",
+    "ok": true,
+    "bench": "loaddump"
+  },
+  {
+    "spec": "Input",
+    "item": "Load dump: fault timer margin",
+    "measured": "TMR peak 0.81 V",
+    "limit": "< 1.25 V fault threshold",
+    "ok": true,
+    "bench": "loaddump"
+  },
+  {
+    "spec": "Input",
+    "item": "Load dump: FLT stays high",
+    "measured": "min 3.30 V",
+    "limit": "> 2 V",
+    "ok": true,
+    "bench": "loaddump"
+  },
+  {
+    "spec": "Stress",
+    "item": "Q1 load dump",
+    "measured": "8.0 W, 3.23 J",
+    "limit": "",
+    "ok": true,
+    "bench": "loaddump",
+    "q1_peak_w": 7.983656159668044,
+    "q1_energy_j": 3.2314736109402284,
+    "q1_time_s": 0.4
+  },
+  {
+    "spec": "Input",
+    "item": "Turn-on threshold (UVLO rising)",
+    "measured": "15.59 V",
+    "limit": "15 V ± 1 V",
+    "ok": true,
+    "bench": "uvlo"
+  },
+  {
+    "spec": "Input",
+    "item": "Turn-off threshold (UVLO falling)",
+    "measured": "14.97 V",
+    "limit": "below turn-on",
+    "ok": true,
+    "bench": "uvlo"
+  },
+  {
+    "spec": "Input",
+    "item": "Reverse polarity −30 V: current drawn",
+    "measured": "10.1 mA",
+    "limit": "< 15 mA (Rev B)",
+    "ok": true,
+    "bench": "reverse"
+  },
+  {
+    "spec": "Input",
+    "item": "Reverse polarity: bus voltage",
+    "measured": "0.0 mV",
+    "limit": "≈ 0 (loads never see it)",
+    "ok": true,
+    "bench": "reverse"
+  },
+  {
+    "spec": "Stress",
+    "item": "Q2 reverse blocking",
+    "measured": "29.5 V",
+    "limit": "",
+    "ok": true,
+    "bench": "reverse",
+    "q2_vds": 29.456462853639216,
+    "src_min": -29.456462860107422
+  },
+  {
+    "spec": "Input",
+    "item": "Electronic breaker trip current",
+    "measured": "2.54 A",
+    "limit": "2.5 A ± 20 %",
+    "ok": true,
+    "bench": "overload"
+  },
+  {
+    "spec": "Input",
+    "item": "Folds back into a dead short",
+    "measured": "1.29 A",
+    "limit": "< trip current",
+    "ok": true,
+    "bench": "overload"
+  },
+  {
+    "spec": "Stress",
+    "item": "Q1 worst operating point in current limit",
+    "measured": "64 W at VBUS 2.4 V",
+    "limit": "",
+    "ok": true,
+    "bench": "overload"
+  },
+  {
+    "spec": "Input",
+    "item": "Dead short: fault timer turns Q1 off",
+    "measured": "after 94 ms (3.4 J)",
+    "limit": "turns off",
+    "ok": true,
+    "bench": "short"
+  },
+  {
+    "spec": "Input",
+    "item": "Dead short: FLT asserts",
+    "measured": "87 ms after short",
+    "limit": "asserts",
+    "ok": true,
+    "bench": "short"
+  },
+  {
+    "spec": "Input",
+    "item": "Dead short: auto-retry",
+    "measured": "every 260 s",
+    "limit": "retries",
+    "ok": true,
+    "bench": "short"
+  },
+  {
+    "spec": "Stress",
+    "item": "Q1 dead short pulse",
+    "measured": "32 W for 94 ms",
+    "limit": "",
+    "ok": true,
+    "bench": "short",
+    "q1_peak_w": 35.9515850144338,
+    "q1_energy_j": 3.3672486512296462,
+    "q1_time_s": 0.09366229260576844
+  },
+  {
+    "spec": "Stress",
+    "item": "Q1 partial short pulse (worst case)",
+    "measured": "63 W for 103 ms",
+    "limit": "",
+    "ok": true,
+    "bench": "partial",
+    "q1_peak_w": 63.83202086076278,
+    "q1_energy_j": 6.5783720916487844,
+    "q1_time_s": 0.10306235901745887
+  },
+  {
+    "spec": "Outputs",
+    "item": "5V0 load step 25 → 100 % → 25 %",
+    "measured": "4.07 %, settled in 53 µs",
+    "limit": "< ± 5 %, < 200 µs",
+    "ok": true,
+    "bench": "bucks"
+  },
+  {
+    "spec": "Outputs",
+    "item": "5V0 across 16–38 V input at full load",
+    "measured": "4.945–5.007 V (1.10 %)",
+    "limit": "± 2 %",
+    "ok": true,
+    "bench": "bucks"
+  },
+  {
+    "spec": "Outputs",
+    "item": "3V3 load step 25 → 100 % → 25 %",
+    "measured": "2.64 %, settled in 37 µs",
+    "limit": "< ± 5 %, < 200 µs",
+    "ok": true,
+    "bench": "bucks"
+  },
+  {
+    "spec": "Outputs",
+    "item": "3V3 across 16–38 V input at full load",
+    "measured": "3.294–3.306 V (0.19 %)",
+    "limit": "± 2 %",
+    "ok": true,
+    "bench": "bucks"
+  },
+  {
+    "spec": "Outputs",
+    "item": "5V0 short circuit and release",
+    "measured": "5.6 A peak; recovers in 0.05 ms, peaks at +2 %",
+    "limit": "recovers, peak ≤ 110 %",
+    "ok": true,
+    "bench": "railshort"
+  },
+  {
+    "spec": "Outputs",
+    "item": "3V3 short circuit and release",
+    "measured": "5.6 A peak; recovers in 0.07 ms, peaks at +9 %",
+    "limit": "recovers, peak ≤ 110 %",
+    "ok": true,
+    "bench": "railshort"
+  }
+]

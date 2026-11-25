@@ -1,0 +1,13 @@
+* PM28 hand-written models for parts LTspice doesn't ship.
+* Vendor models (LTC4364-2, LT8641, LTC6101, Infineon FETs, BAS21) come from the LTspice library.
+
+* Littelfuse SMCJ58CA, bidirectional TVS. Modelled as the worst-case (highest
+* clamp) part: VBR = 71.2 V at 1 mA, VC = 93.6 V at 16 A -> 1.4 ohm dynamic.
+.subckt SMCJ58CA A B
+D1 A M DTVS58
+D2 B M DTVS58
+.model DTVS58 D(Ron=0.7 Roff=10Meg Vfwd=0.7 epsilon=0.1 Vrev=70.5 revepsilon=1 Cjo=2n)
+.ends SMCJ58CA
+
+* 62 V, 500 mW zener (MMSZ5265B class). Datasheet-table model, not vendor.
+.model MMSZ5265B D(Is=1n Rs=20 N=1.5 BV=62 IBV=2m NBV=2 Cjo=20p)
