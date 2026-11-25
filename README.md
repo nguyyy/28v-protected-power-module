@@ -44,13 +44,17 @@ flowchart LR
     Q1 --> Q2["Q2 BSC060N10NS3<br/>reverse block<br/>(ideal diode)"]
     Q2 --> RS["RSNS 20 mΩ<br/>2.5 A breaker"]
     RS --> BUS(["VBUS ≤ 38 V"])
-    U1["U1 LTC4364-2<br/>surge stopper +<br/>ideal diode + timer"] -. gate .-> Q1
-    U1 -. gate .-> Q2
-    U1 -. sense .-> RS
-    BUS --> B5["U2 LT8641<br/>1 MHz buck"] --> V5(["5V0 · 2 A"])
-    BUS --> B3["U3 LT8641<br/>1 MHz buck"] --> V3(["3V3 · 1 A"])
-    U1 -. "ENOUT: rails start<br/>after Q1 is fully on" .-> B5 & B3
-    BUS --> TM["U4 LTC6101 +<br/>dividers"] --> HDR(["telemetry header<br/>VBUS, IIN, V5, V3,<br/>PG5, PG3, FLT"])
+    U1["U1 LTC4364-2<br/>surge stopper +<br/>ideal diode + timer"] -.->|gate| Q1
+    U1 -.->|gate| Q2
+    U1 -.->|sense| RS
+    BUS --> B5["U2 LT8641<br/>1 MHz buck"]
+    B5 --> V5(["5V0 · 2 A"])
+    BUS --> B3["U3 LT8641<br/>1 MHz buck"]
+    B3 --> V3(["3V3 · 1 A"])
+    U1 -.->|"ENOUT: start after Q1 is fully on"| B5
+    U1 -.->|ENOUT| B3
+    BUS --> TM["U4 LTC6101 +<br/>dividers"]
+    TM --> HDR(["telemetry header<br/>VBUS, IIN, V5, V3,<br/>PG5, PG3, FLT"])
 ```
 
 - **Surges** are clamped *linearly*: the LTC4364 runs Q1 as a source follower
