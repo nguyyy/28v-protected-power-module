@@ -68,14 +68,14 @@ footprint) but not verified until hardware exists.
 
 ## Changes in Rev B
 
-Found by the LTspice suite (`sim/run.py`) before any hardware existed.
+From the LTspice results in `sim/run.py`.
 
-- **Reverse current < 1 mA → < 15 mA.** With the input reversed, the LTC4364's
-  own GND-to-SOURCE path conducts about 10 mA at -30 V (measured on the vendor
-  model with ammeters on both pins). Nothing outside the chip carries current.
-  Getting under 1 mA would mean a diode in the controller's ground, which shifts
-  every threshold it sets. 10 mA at 30 V is 0.3 W, harmless, so the limit moved.
-- **Pulse 2a amplitude made explicit.** ISO 7637-2 adds Us to the running bus,
-  so the generator peaks at 140 V, not 112 V. The TVS sizing in Rev A used 112 V
-  absolute and under-called the clamp current (11.8 A → 19.9 A).
+- **Reverse current < 1 mA changed to < 15 mA.** With the input reversed, the
+  LTC4364 conducts about 10 mA internally from GND to SOURCE at -30 V (measured
+  on the vendor model). No external part carries current. Meeting 1 mA would
+  require a diode in the controller ground, which would offset all of its
+  thresholds. Dissipation is 0.3 W.
+- **Pulse 2a amplitude clarified.** ISO 7637-2 adds Us to the supply voltage,
+  so the peak is 140 V. Rev A sized the TVS for 112 V, giving 11.8 A clamp
+  current instead of 19.9 A.
 

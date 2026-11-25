@@ -87,13 +87,11 @@ Tuned      C_SS / C_FF         4.7 nF / 22 pF                             set in
 
 ## Open items
 
-- ~~LT8641 feedback reference back-solved as 0.800 V.~~ Measured on the vendor
-  model: 0.809 V. Rev A's dividers would have put both rails 1.1 % high. The
-  dividers are now E192 0.1 % parts landing on 5.000 V and 3.300 V.
-- ~~3.3 V rail's 64 % inductor ripple might come in hot.~~ It's 4 mVpp at the
-  output in simulation, against a 20 mVpp limit.
-- The PTC hold-current derating at 85 °C (55 %) is a typical polymer-PTC curve.
-  It needs checking against the Bourns MF-RX table.
-- Absolute-maximum ratings in the derating sheet are from memory of the
-  datasheets' ratings tables. analog.com refused automated downloads from the
-  machine this was built on, so they need a pass against the PDFs before release.
+- Closed: LT8641 feedback reference measured on the vendor model as 0.809 V
+  (Rev A assumed 0.800 V). Dividers changed to E192 0.1 % values for 5.000 V
+  and 3.300 V.
+- Closed: 3.3 V output ripple is 4.7 mVpp in simulation (limit 20 mVpp).
+- Open: PTC hold-current derating at 85 °C (55 %) is a typical polymer-PTC
+  curve. To be checked against the Bourns MF-RX table.
+- Open: absolute-maximum ratings marked * in the derating sheet are not yet
+  verified against the datasheets.

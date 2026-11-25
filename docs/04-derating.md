@@ -1,9 +1,9 @@
 # Derating
 
-The spec asks for every part to run at 80 % of its rating or less at worst case.
-This sheet takes each part's worst stress, from [`calc/sizing.json`](../calc/sizing.json)
-or the LTspice suite ([`sim/results.json`](../sim/results.json)), and divides by
-the rating. [`calc/derating.py`](../calc/derating.py) produces both the table and the chart.
+Requirement: every part at or below 80 % of its rating at worst case. Stresses
+come from [`calc/sizing.json`](../calc/sizing.json) and the LTspice results
+([`sim/results.json`](../sim/results.json)). [`calc/derating.py`](../calc/derating.py)
+generates the table and chart.
 
 ![Derating chart](img/derating.png)
 
@@ -27,36 +27,32 @@ the rating. [`calc/derating.py`](../calc/derating.py) produces both the table an
 | C_OUT | 22 µF 10 V X7R | voltage, 5V0 rail | 5 V | 10 V | 50% |
 | D2 | BAS21 | reverse voltage, pulse 2a | 99.1 V | 250 V | 40% |
 
-Ratings marked * are from memory of the datasheets' ratings tables. analog.com
-refused automated downloads from the build machine, so they still need a pass
-against the PDFs before release. The rest are on the parts' first pages.
+\* Rating not yet verified against the datasheet.
 
 ## Q1 junction temperature
 
-LTspice's FET models don't self-heat, so Q1's junction temperature comes from
-the simulated power waveform and a two-number thermal model. The die drop is
-P × R_th(j-c), with R_th(j-c) taken from the rated P_tot. On top of that, the
-tab and the copper within a few millimetres soak up the pulse energy over its
-~100 ms. The worst pulse is the partial short (bench `partial`):
+The LTspice FET models do not include self-heating. Q1 junction temperature is
+estimated from the simulated power waveform with a two-element thermal model:
+die drop P × R_th(j-c), with R_th(j-c) derived from rated P_tot, plus the pulse
+energy absorbed by the tab and adjacent copper. The worst pulse is the partial
+short (bench `partial`).
 
 | | Worst pulse | R_th(j-c) | Tab + copper | T_j at 85 °C ambient |
 |---|---|---|---|---|
 | **IPB072N15N3 G** (D²PAK, used) | 64 W, 6.6 J, 103 ms | 0.5 K/W | 0.5 J/K | **130 °C** |
 | IPD200N15N3 G (DPAK, Rev A) | same | 1.0 K/W | 0.15 J/K | 193 °C |
 
-For comparison, the load dump is 8.0 W, 3.23 J spread over 400 ms, and a dead short is 32 W for 94 ms (3.4 J).
+For comparison, the load dump is 8.0 W, 3.23 J over 400 ms, and a dead short
+is 32 W for 94 ms (3.4 J).
 
-This is an estimate good to perhaps ±30 %. Even at the pessimistic end the
-D²PAK stays below 175 °C and the DPAK doesn't, which is the decision it
-needed to support. The upgrade path is Infineon's Z_th(j-c) curve plus a
-board-level thermal sim once the layout exists.
+Estimated accuracy is ±30 %. At the upper bound the D²PAK remains below 175 °C
+and the DPAK does not. To be refined with the Infineon Z_th(j-c) curve and a
+board-level thermal simulation after layout.
 
-## Lines worth a second look
+## Exceptions
 
-- **F1 voltage while tripped.** If the PTC has tripped when a load dump arrives,
-  it holds off the full 58 V: 81 % of its 72 V rating. That's a fault on top of
-  a fault, so I'm leaving it.
-- **D1 standoff.** The 58 V standoff equals the load-dump level by design. Its
-  breakdown is 64.4 V minimum, so it doesn't conduct during the surge, but it
-  leaks more there than at 28 V. Pulse power, the stress that actually wears a
-  TVS, is the line in the table.
+- **F1 voltage while tripped:** 58 V on a 72 V rating (81 %). Only occurs if
+  the PTC has already tripped when a load dump arrives. Accepted.
+- **D1 standoff:** the 58 V standoff equals the load-dump level. Minimum
+  breakdown is 64.4 V, so D1 does not conduct during the surge, but leakage is
+  higher than at 28 V. The table uses peak pulse power as the D1 stress.

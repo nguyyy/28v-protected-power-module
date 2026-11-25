@@ -1,12 +1,8 @@
 """
-PM28 derating sheet: worst-case stress on every part that can be hurt, as a
-fraction of its rating. Stresses come from calc/sizing.json and the LTspice
-results (sim/results.json); ratings are datasheet absolute maxima.
+PM28 derating sheet. Worst-case stress on each part, from calc/sizing.json and
+sim/results.json, divided by its rating. Writes docs/img/derating.png.
 
-    python calc/derating.py      # writes docs/img/derating.png, prints the table
-
-Ratings marked * are from memory of the datasheet ratings tables and still need
-a pass against the PDFs (analog.com refused automated downloads here).
+Usage: python calc/derating.py
 """
 import json
 import sys
@@ -27,11 +23,7 @@ def num(item, key):
     return float(R[item][key])
 
 
-# ---- Q1 junction temperature in the worst fault pulse --------------------
-# ponytail: lumped two-node estimate, not a Cauer fit. Die drop P*Rjc plus the
-# tab and nearby copper soaking up the pulse energy. Swap in Infineon's Zth curve
-# when the PDF is at hand; that's the upgrade path.
-FETS = {  # Rjc from Ptot (Tj 175 C, Tc 25 C); C = tab + copper within ~4 mm, J/K
+FETS = {
     "IPB072N15N3 G (D²PAK, used)": dict(rjc=150 / 300, c=0.50),
     "IPD200N15N3 G (DPAK, Rev A)": dict(rjc=150 / 150, c=0.15),
 }
@@ -39,7 +31,7 @@ pulse = R["Q1 partial short pulse (worst case)"]
 tj = {k: T_AMB + pulse["q1_peak_w"] * f["rjc"] + pulse["q1_energy_j"] / f["c"] for k, f in FETS.items()}
 
 b = S["bucks"]
-rows = [  # (ref, part, what, stress, rating, unit, rating_from_memory)
+rows = [
     ("Q1", "IPB072N15N3", "V_DS, TVS clamp with Q1 off", S["tvs"]["v_spike"], 150, "V", False),
     ("Q1", "IPB072N15N3", "T_j, worst fault pulse (est.)", tj["IPB072N15N3 G (D²PAK, used)"], TJ_MAX, "°C", False),
     ("Q2", "BSC060N10NS3", "V_DS, input reversed", num("Q2 reverse blocking", "q2_vds"), 100, "V", False),
@@ -69,7 +61,6 @@ if __name__ == "__main__":
     for k, v in tj.items():
         print(f"  T_j estimate {k}: {v:.0f} °C")
 
-    # chart: one bar per line, 80 % guideline
     INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
     BLUE, RED = "#2a78d6", "#d03b3b"
     labels = [f"{ref}  {what}" for ref, _, what, *_ in rows][::-1]

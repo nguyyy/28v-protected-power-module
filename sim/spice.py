@@ -1,7 +1,7 @@
 """
-Run LTspice in batch mode and read its .raw output. No dependencies beyond numpy.
+Run LTspice in batch mode and read its binary .raw output.
 
-LTSPICE env var overrides the executable path.
+Set LTSPICE to override the executable path.
 """
 import os
 import re
@@ -29,11 +29,11 @@ def read_raw(path):
     if "double" in flags:
         a = np.frombuffer(data, "<f8", count=npts * nvar).reshape(npts, nvar)
         cols = [a[:, k] for k in range(nvar)]
-    else:  # time is float64, everything else float32
+    else:
         rec = np.frombuffer(data, np.dtype([("t", "<f8"), ("v", "<f4", (nvar - 1,))]), count=npts)
         cols = [rec["t"]] + [rec["v"][:, k].astype(float) for k in range(nvar - 1)]
     out = {n.lower(): c for n, c in zip(names, cols)}
-    out["time"] = np.abs(out["time"])  # LTspice uses the sign bit as a flag
+    out["time"] = np.abs(out["time"])
     return out
 
 
@@ -56,7 +56,6 @@ def log_text(cir_path):
 
 
 if __name__ == "__main__":
-    # self-check: a tiny RC netlist, compare against the analytic answer
     import tempfile
     d = Path(tempfile.mkdtemp())
     (d / "rc.cir").write_text("* rc\nV1 in 0 PWL(0 0 1n 1)\nR1 in out 1k\nC1 out 0 1u\n"
