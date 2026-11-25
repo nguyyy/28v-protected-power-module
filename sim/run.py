@@ -308,7 +308,7 @@ def an_system(w):
     check("Telemetry", "Highest voltage on any telemetry pin", f"{vmax_mon:.2f} V", "≤ 3.3 V (+0.3 V)",
           vmax_mon <= 3.6, "system")
 
-    fig, ax = figure(4, "Hot plug to 28 V: protected bus first, then both rails")
+    fig, ax = figure(4, "Startup, hot plug to 28 V, full load")
     x = ms(w)
     ax[0].plot(x, w["v(in)"], color=C[0], label="VIN (connector)")
     ax[0].plot(x, w["v(vbus)"], color=C[1], label="VBUS (protected)")
@@ -317,26 +317,26 @@ def an_system(w):
     ax[1].plot(x, w["i(rf1)"], color=C[0])
     for a in ax:
         a.axvline(t_en * 1e3, color=INK2, lw=0.8, ls=":")
-    ax[1].annotate("ENOUT: Q1 fully on, bucks released ", (t_en * 1e3, 0.72), fontsize=8.5, color=INK,
+    ax[1].annotate("ENOUT ", (t_en * 1e3, 0.72), fontsize=8.5, color=INK,
                    ha="right", va="center")
     ax[1].set_ylabel("A"); ax[1].set_ylim(0, 0.8)
-    ax[1].set_title(f"Input current: {inrush:.2f} A inrush while the bus charges, then the bucks start")
+    ax[1].set_title(f"Input current, {inrush:.2f} A peak inrush")
     for rail, r, k in (("5V0", RAILS["5V0"], 2), ("3V3", RAILS["3V3"], 3)):
         ax[k].plot(x, w[f"v(v{r['n']})"], color=C[0] if k == 2 else C[1], label=rail)
         ax[k].plot(x, w[f"v(pg{r['n']})"], color=C[2], lw=1.1, label=f"PG{r['n']}")
         limit(ax[k], r["v"] * 1.03, "+3 % overshoot limit", "left")
         ax[k].set_ylim(0, r["v"] * 1.15)
         ax[k].set_ylabel("V"); ax[k].legend(loc="lower right")
-        ax[k].set_title(f"{rail}: in regulation {(out[rail]['t_reg'] - t_uv) * 1e3:.1f} ms after UVLO crossing (limit 10 ms)")
+        ax[k].set_title(f"{rail}, in regulation {(out[rail]['t_reg'] - t_uv) * 1e3:.1f} ms after UVLO crossing (limit 10 ms)")
     ax[-1].set_xlabel("time (ms)")
     save(fig, "startup")
 
-    fig, ax = figure(2, "Steady state at 28 V, both rails at full load (1 µs/div-ish zoom)", 1.6)
+    fig, ax = figure(2, "Output ripple, 28 V input, full load", 1.6)
     m = win(w, 11.9e-3, 11.99e-3)
     for k, (rail, r) in enumerate(RAILS.items()):
         v = w[f"v(v{r['n']})"][m]
         ax[k].plot(w["time"][m] * 1e6, (v - v.mean()) * 1e3, color=C[k])
-        ax[k].set_ylabel("mV (AC)"); ax[k].set_title(f"{rail} ripple: {np.ptp(v) * 1e3:.1f} mVpp (limit 20 mVpp)")
+        ax[k].set_ylabel("mV (AC)"); ax[k].set_title(f"{rail}, {np.ptp(v) * 1e3:.1f} mVpp (limit 20 mVpp)")
         ax[k].set_ylim(-12, 12)
     ax[-1].set_xlabel("time (µs)")
     save(fig, "ripple")
@@ -358,18 +358,18 @@ def an_pulse2a(w):
         dev = max(v.max() - r["v"], r["v"] - v.min()) / r["v"]
         check("Input", f"Pulse 2a: {rail} during the spike", f"{v.min():.3f}–{v.max():.3f} V ({dev * 100:.2f} %)",
               "± 2 %", dev <= 0.02, "pulse2a")
-    fig, ax = figure(3, "ISO 7637-2 pulse 2a: +112 V on the 28 V bus, 2 Ω source", 1.9)
+    fig, ax = figure(3, "ISO 7637-2 pulse 2a, +112 V on 28 V, 2 Ω source", 1.9)
     x = (t[m] - 10e-3) * 1e6
     ax[0].plot(x, w["v(in)"][m], color=C[0], label="VIN (connector)")
     ax[0].plot(x, w["v(nf)"][m], color=C[1], label="after PTC, TVS clamp")
     ax[0].plot(x, w["v(vbus)"][m], color=C[2], label="VBUS (protected)")
     limit(ax[0], 38, "38 V clamp", "right")
-    ax[0].set_ylabel("V"); ax[0].legend(loc="upper right", bbox_to_anchor=(1, 0.85)); ax[0].set_title("Spike is clamped by the TVS; Q1 keeps it off the bus")
+    ax[0].set_ylabel("V"); ax[0].legend(loc="upper right", bbox_to_anchor=(1, 0.85)); ax[0].set_title("Input, TVS node and VBUS")
     ax[1].plot(x, w["i_tvs"][m], color=C[1]); ax[1].set_ylabel("A"); ax[1].set_title(f"TVS current, {itvs:.1f} A peak")
     for k, (rail, r) in enumerate(RAILS.items()):
         ax[2].plot(x, (w[f"v(v{r['n']})"][m] / r["v"] - 1) * 100, color=C[k], label=rail)
     limit(ax[2], 2, "+2 %"); limit(ax[2], -2, "−2 %")
-    ax[2].set_ylim(-3, 3); ax[2].set_ylabel("% of nominal"); ax[2].legend(loc="upper left", ncol=2); ax[2].set_title("Both rails stay in regulation")
+    ax[2].set_ylim(-3, 3); ax[2].set_ylabel("% of nominal"); ax[2].legend(loc="upper left", ncol=2); ax[2].set_title("Output deviation")
     ax[-1].set_xlabel("time from pulse (µs)")
     save(fig, "pulse2a")
 
@@ -393,16 +393,16 @@ def an_loaddump(w):
     RESULTS.append(dict(spec="Stress", item="Q1 load dump", measured=f"{p_pk:.1f} W, {e:.2f} J",
                         limit="", ok=True, bench="loaddump", q1_peak_w=p_pk, q1_energy_j=e,
                         q1_time_s=0.4))
-    fig, ax = figure(3, "ISO 16750-2 suppressed load dump: 58 V, 1 Ω, 400 ms (flat top, harsher than the standard)")
+    fig, ax = figure(3, "ISO 16750-2 suppressed load dump, 58 V, 1 Ω, 400 ms flat top")
     x = ms(w)
     ax[0].plot(x, w["v(in)"], color=C[0], label="VIN (connector)")
     ax[0].plot(x, vb, color=C[1], label="VBUS (protected)")
-    limit(ax[0], 39, "39 V", "left"); limit(ax[0], 16, "16 V: rails' minimum", "left")
+    limit(ax[0], 39, "39 V", "left"); limit(ax[0], 16, "16 V: rails' minimum", "right")
     ax[0].set_ylim(0, 65); ax[0].set_ylabel("V"); ax[0].legend(loc="upper right", bbox_to_anchor=(1, 0.8))
-    ax[0].set_title("The LTC4364 holds the bus at 38 V; the loads never see the surge")
-    ax[1].plot(x, p, color=C[1]); ax[1].set_ylabel("W"); ax[1].set_title(f"Q1 dissipation during the surge: {p_pk:.1f} W, {e:.2f} J")
+    ax[0].set_title("Input and VBUS")
+    ax[1].plot(x, p, color=C[1]); ax[1].set_ylabel("W"); ax[1].set_title(f"Q1 dissipation, {p_pk:.1f} W, {e:.2f} J")
     ax[2].plot(x, w["v(tmr)"], color=C[0]); limit(ax[2], 1.25, "1.25 V: timer expires", "left")
-    ax[2].set_ylim(0, 1.5); ax[2].set_ylabel("V"); ax[2].set_title(f"Fault timer peaks at {tmr:.2f} V and the bus stays up")
+    ax[2].set_ylim(0, 1.5); ax[2].set_ylabel("V"); ax[2].set_title(f"TMR, {tmr:.2f} V peak")
     ax[-1].set_xlabel("time (ms)")
     save(fig, "loaddump")
 
@@ -418,7 +418,7 @@ def an_uvlo(w):
     v_off = float(np.interp(t_off, t, vin))
     check("Input", "Turn-on threshold (UVLO rising)", f"{v_on:.2f} V", "15 V ± 1 V", 14 <= v_on <= 16, "uvlo")
     check("Input", "Turn-off threshold (UVLO falling)", f"{v_off:.2f} V", "below turn-on", v_off < v_on, "uvlo")
-    fig, ax = figure(1, "Undervoltage lockout: slow ramp 0 → 20 V → 0", 2.6)
+    fig, ax = figure(1, "Undervoltage lockout, input ramp 0-20-0 V", 2.6)
     x = ms(w)
     ax[0].plot(x, vin, color=C[0], label="VIN")
     ax[0].plot(x, w["v(vbus)"], color=C[1], label="VBUS")
@@ -454,7 +454,7 @@ def an_overload(w):
     k = np.argmax(p)
     RESULTS.append(dict(spec="Stress", item="Q1 worst operating point in current limit",
                         measured=f"{p[k]:.0f} W at VBUS {v[k]:.1f} V", limit="", ok=True, bench="overload"))
-    fig, ax = figure(1, "Electronic breaker: current limit and foldback (load swept 50 Ω → short)", 3.0)
+    fig, ax = figure(1, "Current limit and foldback, load swept 50 Ω to short", 3.0)
     o = np.argsort(v)
     ax[0].plot(v[o], i[o], color=C[0], label="bus current (A)")
     ax[0].set_xlabel("VBUS (V)"); ax[0].set_ylabel("A")
@@ -464,7 +464,7 @@ def an_overload(w):
                    arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8))
     ax[0].annotate(f"Q1 worst case: {p[k]:.0f} W at {v[k]:.1f} V", (v[k], i[k]), (v[k] + 9, 1.4), fontsize=8.5,
                    arrowprops=dict(arrowstyle="-", color=INK2, lw=0.8))
-    ax[0].set_title("Load pulling the bus down (left to right)")
+    ax[0].set_title("Bus current vs VBUS")
     save(fig, "overload")
 
 
@@ -493,18 +493,18 @@ def an_short(w):
           "retries", bool(retry), "short")
     RESULTS.append(dict(spec="Stress", item="Q1 dead short pulse", measured=f"{f['mean']:.0f} W for {f['dur'] * 1e3:.0f} ms",
                         limit="", ok=True, bench="short", q1_peak_w=f["peak"], q1_energy_j=f["energy"], q1_time_s=f["dur"]))
-    fig, ax = figure(3, "Dead short on the bus: limit, fold back, time out, retry", 1.75)
+    fig, ax = figure(3, "Dead short on VBUS", 1.75)
     m = t < 0.3
     x = t[m] * 1e3
     ax[0].plot(x, w["i(rsns)"][m], color=C[0]); ax[0].set_ylim(0, 3); ax[0].set_ylabel("A")
-    ax[0].set_title(f"Bus current: folds back to {fold:.2f} A, off after {f['dur'] * 1e3:.0f} ms")
+    ax[0].set_title(f"Bus current, {fold:.2f} A foldback, off after {f['dur'] * 1e3:.0f} ms")
     ax[1].plot(x, w["v(tmr)"][m], color=C[1]); limit(ax[1], 1.25, "1.25 V", "left"); ax[1].set_ylabel("V"); ax[1].set_title("Fault timer")
-    ax[2].plot(x, w["v(flt)"][m], color=C[2]); ax[2].set_ylabel("V"); ax[2].set_title("FLT (to the MCU)")
+    ax[2].plot(x, w["v(flt)"][m], color=C[2]); ax[2].set_ylabel("V"); ax[2].set_title("FLT")
     ax[-1].set_xlabel("time (ms)")
     save(fig, "short")
-    fig, ax = figure(1, f"Auto-retry with the short still present: one attempt every {retry[0] - 30e-3:.0f} s" if retry else "Auto-retry", 2.2)
+    fig, ax = figure(1, f"Auto-retry into a sustained short, period {retry[0] - 30e-3:.0f} s" if retry else "Auto-retry", 2.2)
     ax[0].plot(t, w["i(rsns)"], color=C[0]); ax[0].set_ylabel("A"); ax[0].set_xlabel("time (s)"); ax[0].set_ylim(0, 3)
-    ax[0].set_title("Bus current over 300 s (the 32-cycle TMR cool-down sets the retry period)")
+    ax[0].set_title("Bus current")
     save(fig, "retry")
 
 
@@ -517,7 +517,7 @@ def an_partial(w):
 
 def an_bucks(w):
     t = w["time"]
-    fig, ax = figure(3, "Load steps (25 → 100 % in 1 µs) and line ramps (16 ↔ 38 V) at full load", 1.8)
+    fig, ax = figure(3, "Load steps 25-100 % in 1 µs, line ramps 16-38 V at full load", 1.8)
     for k, (rail, r) in enumerate(RAILS.items()):
         v = w[f"v(v{r['n']})"]
         pre, full, post = mean(w, f"v(v{r['n']})", 2.8e-3, 3e-3), mean(w, f"v(v{r['n']})", 3.4e-3, 3.5e-3), \
@@ -535,9 +535,9 @@ def an_bucks(w):
         ax[k].plot(ms(w), (v / r["v"] - 1) * 100, color=C[k], lw=1.0)
         limit(ax[k], 5, "+5 %"); limit(ax[k], -5, "−5 %")
         ax[k].set_ylim(-7, 7); ax[k].set_ylabel("% of nom.")
-        ax[k].set_title(f"{rail}: worst deviation {dev * 100:.1f} % on the load step, settled in {settle * 1e6:.0f} µs")
+        ax[k].set_title(f"{rail}, load step {dev * 100:.1f} %, settled in {settle * 1e6:.0f} µs")
     ax[2].plot(ms(w), w["v(vbus)"], color=C[3], label="VIN of the bucks")
-    ax[2].set_ylabel("V"); ax[2].set_ylim(10, 42); ax[2].set_title("Input to the bucks")
+    ax[2].set_ylabel("V"); ax[2].set_ylim(10, 42); ax[2].set_title("Buck input voltage")
     for a in ax:
         a.set_xlim(2.6, 5.2)
     ax[-1].set_xlabel("time (ms)")
@@ -546,7 +546,7 @@ def an_bucks(w):
 
 def an_railshort(w):
     t = w["time"]
-    fig, ax = figure(2, "Output short circuit, then release", 1.9)
+    fig, ax = figure(2, "Output short circuit and release", 1.9)
     for k, (rail, r, t0) in enumerate((("5V0", RAILS["5V0"], 2.5e-3), ("3V3", RAILS["3V3"], 4.0e-3))):
         v, il = w[f"v(v{r['n']})"], w[f"i(l{r['n']})"]
         sc = win(w, t0 + 0.1e-3, t0 + 1e-3)
@@ -561,7 +561,7 @@ def an_railshort(w):
         ax[k].plot(ms(w), il, color=C[2], lw=0.8, label="inductor current (A)")
         ax[k].set_ylabel("V  /  A"); ax[k].legend(loc="upper right")
         ax[k].axvspan(t0 * 1e3, (t0 + 1e-3) * 1e3, color=GRID, alpha=0.6, lw=0)
-        ax[k].set_title(f"{rail} shorted for 1 ms (shaded): limit {ipk:.1f} A peak, recovers in {t_rec * 1e3:.2f} ms")
+        ax[k].set_title(f"{rail} shorted 1 ms (shaded), {ipk:.1f} A peak, recovery {t_rec * 1e3:.2f} ms")
     ax[-1].set_xlabel("time (ms)")
     save(fig, "railshort")
 
