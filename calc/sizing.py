@@ -16,7 +16,8 @@ from pathlib import Path
 # ---------------------------------------------------------------- spec ----
 VIN_NOM, VIN_MIN, VIN_MAX = 28.0, 16.0, 36.0
 V_LOADDUMP, RI_LOADDUMP, T_LOADDUMP = 58.0, 1.0, 0.400
-V_SPIKE, RI_SPIKE = 112.0, 2.0
+# ISO 7637-2 pulse 2a rides on top of the 28 V bus (UA), so the open-circuit peak is UA + Us.
+V_SPIKE, RI_SPIKE = VIN_NOM + 112.0, 2.0
 V_REVERSE = -30.0
 V_CLAMP_TARGET = 38.0
 V_UVLO_TARGET = 15.0
@@ -29,7 +30,8 @@ T_AMB_MAX = 85.0
 LTC4364_VFB = 1.25          # FB servo, V (1.22..1.28)
 LTC4364_VUV = 1.25          # UV comparator threshold, V
 LTC4364_VSNS = 0.050        # current-limit sense voltage, V (25 mV foldback)
-LT8641_VFB = 0.800          # FB reference, V (back-solved from ADI example: 1M/191k -> 5.0 V)
+LT8641_VFB = 0.809          # FB reference, V. Measured on the LTspice vendor model (FB node, steady
+                            # state). The 0.800 V back-solved from ADI's demo divider was 1.1 % low.
 LT8641_TON_MIN = 50e-9      # worst-case minimum on-time, s
 LT8641_VSW_BOT = 0.1        # bottom switch drop at load, V (approx)
 LT8641_ILIM = 3.5           # rated output current, A
@@ -52,9 +54,13 @@ E96 = [1.00, 1.02, 1.05, 1.07, 1.10, 1.13, 1.15, 1.18, 1.21, 1.24, 1.27, 1.30, 1
        8.87, 9.09, 9.31, 9.53, 9.76]
 
 
-def e96(x):
+# E192 (0.1 % parts) for the buck FB dividers. IEC 60063 rounds 9.19 up to 9.20.
+E192 = [9.20 if v == 9.19 else v for v in (round(10 ** (i / 192), 2) for i in range(192))]
+
+
+def e96(x, series=E96):
     dec = 10 ** math.floor(math.log10(x))
-    return min((v * dec for v in E96 + [10.0]), key=lambda v: abs(v - x))
+    return min((v * dec for v in series + [10.0]), key=lambda v: abs(v - x))
 
 
 def fmt_r(r):
@@ -126,8 +132,7 @@ rd = (TVS["vc"] - TVS["vbr_max"]) / TVS["ipp"]  # dynamic resistance, worst part
 i_tvs = (V_SPIKE - TVS["vbr_max"]) / (RI_SPIKE + PTC["rmin"] + rd)
 v_tvs = TVS["vbr_max"] + i_tvs * rd
 row("Front end", "TVS", TVS["pn"],
-    f"pulse 2a: {i_tvs:.1f} A, clamps at {v_tvs:.1f} V (worst-case part); "
-    f"standoff {TVS['vrwm']:.0f} V = load dump level, so it stays off during the surge")
+    f"pulse 2a ({V_SPIKE:.0f} V peak): {i_tvs:.1f} A, clamps at {v_tvs:.1f} V (worst-case part)")
 out["tvs"] = dict(rd=rd, i_spike=i_tvs, v_spike=v_tvs)
 
 # ---------------------------------------- surge FET energy in load dump ----
@@ -135,7 +140,7 @@ i_bus = p_in / vclamp
 vds_ld = V_LOADDUMP - RI_LOADDUMP * i_bus - vclamp_lo
 p_fet = vds_ld * i_bus
 e_fet = p_fet * T_LOADDUMP
-row("Front end", "Surge FET", "Infineon IPD200N15N3 G (150 V, DPAK)",
+row("Front end", "Surge FET", "Infineon IPB072N15N3 G (150 V, D2PAK)",
     f"load dump: {vds_ld:.1f} V x {i_bus:.2f} A = {p_fet:.1f} W for {T_LOADDUMP * 1e3:.0f} ms "
     f"({e_fet:.2f} J)")
 row("Front end", "Reverse FET", "Infineon BSC060N10NS3 G (100 V, SuperSO8)",
@@ -148,9 +153,10 @@ row("Bucks", "RT", fmt_r(RT), f"{FSW / 1e6:g} MHz (46.5/f - 5.2 kΩ fit to ADI R
 out["bucks"] = {"rt": RT, "fsw": FSW}
 for name, r in RAILS.items():
     vo, io = r["v"], r["i"]
-    # best E96 pair with the bottom resistor 100k..1M (keeps FB current ~1-5 uA)
-    rt, rb = min(((e96(b * (vo / LT8641_VFB - 1)), b)
-                  for b in (v * 1e5 for v in E96) if e96(b * (vo / LT8641_VFB - 1)) <= 1.0e6),
+    # best E192 (0.1 %) pair, bottom 49.9k..995k (FB divider current <= 16 uA), top <= 1M
+    rt, rb = min(((e96(b * (vo / LT8641_VFB - 1), E192), b)
+                  for b in (v * d for d in (1e4, 1e5) for v in E192)
+                  if b >= 49.9e3 and e96(b * (vo / LT8641_VFB - 1), E192) <= 1.0e6),
                  key=lambda p: abs(LT8641_VFB * (1 + p[0] / p[1]) - vo))
     v_set = LT8641_VFB * (1 + rt / rb)
     d_max = vo / VIN_MIN
@@ -159,7 +165,7 @@ for name, r in RAILS.items():
     di = (vo / (FSW * L_CHOSEN["L"])) * (1 - vo / VIN_MAX)
     ipk = io + di / 2
     p_dcr = (io ** 2 + di ** 2 / 12) * L_CHOSEN["dcr"]
-    row(f"{name} buck", "FB divider", f"{fmt_r(rt)} / {fmt_r(rb)}", f"Vout {v_set:.3f} V")
+    row(f"{name} buck", "FB divider", f"{fmt_r(rt)} / {fmt_r(rb)} 0.1 %", f"Vout {v_set:.3f} V")
     row(f"{name} buck", "Min on-time check", f"{ton_hi * 1e9:.0f} ns at 38 V in",
         f"limit {LT8641_TON_MIN * 1e9:.0f} ns worst case: OK" if ton_hi > LT8641_TON_MIN
         else "TOO SHORT")
@@ -185,6 +191,21 @@ tele["IIN_MON"] = dict(r_in=RIN, r_out=ROUT, gain=g, v_per_a=g * RSNS, full_scal
 row("Telemetry", "IIN_MON", f"LTC6101, Rin {RIN:g} Ω, Rout {fmt_r(ROUT)}",
     f"{g * RSNS:.3f} V/A, full scale {i_fs:.2f} A")
 out["telemetry"] = tele
+
+# ------------------------------------------- values tuned in simulation ----
+# These aren't derived from a closed-form equation; each one was picked by
+# running the LTspice suite (sim/run.py) and is justified in docs/03-simulation.md.
+out["tuned"] = dict(
+    c_tmr=6.8e-6,    # load dump peaks at 0.80 V of 1.25 V; caps the worst fault pulse at ~100 ms
+    c_hgate=2.2e-9,  # HGATE ramp ~8 V/ms: bus up in ~4 ms, inrush ~0.6 A
+    r_vcc=1e3, c_vcc=100e-9,   # VCC filter: 100 us RC rides through pulse 2a without the zener
+    c_ss=4.7e-9,     # LT8641 soft-start ~2 ms
+    c_ff=22e-12,     # FB feed-forward; 4.7 pF gave -6.1 % on the 5 V load step
+    c_out=22e-6, n_out=2, c_out_eff={"5V0": 13e-6, "3V3": 15e-6},  # 22 uF 10 V X7R 1210 after DC bias
+    c_in=1e-6, c_in_bulk=4.7e-6, c_bus=47e-6, r_bus_esr=0.3,
+)
+row("Tuned", "C_TMR / C_HGATE", "6.8 µF / 2.2 nF", "set in simulation (docs/03-simulation.md)")
+row("Tuned", "C_SS / C_FF", "4.7 nF / 22 pF", "set in simulation (docs/03-simulation.md)")
 
 # -------------------------------------------------------------- report ----
 w = [max(len(str(r[i])) for r in rows) for i in range(3)]

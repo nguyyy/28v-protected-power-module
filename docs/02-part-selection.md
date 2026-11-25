@@ -21,7 +21,7 @@ only ships two TVS parts and neither fits.
 
 ```
           F1          D1            Q1 (surge)   Q2 (reverse)   RSNS
- 28 V ──[PTC 2.5A]──┬─[TVS]─┐  ──┤ IPD200N15N3 ├┤ BSC060N10NS3 ├──/\/\──┬── VBUS (≤ 38 V)
+ 28 V ──[PTC 2.5A]──┬─[TVS]─┐  ──┤ IPB072N15N3 ├┤ BSC060N10NS3 ├──/\/\──┬── VBUS (≤ 38 V)
                     │       │         └──────── LTC4364-2 ──────┘        │
  GND ───────────────┴───────┴──────────────────────────────────────────┤
                                                                          ├── LT8641 ── 5V0 / 2 A
@@ -34,9 +34,9 @@ only ships two TVS parts and neither fits.
 | Ref | Part | Why this one |
 |---|---|---|
 | U1 | LTC4364HMS-2 | Surge stopper and ideal diode controller in one package. It linearly clamps the bus during a surge instead of disconnecting, so the loads ride through a load dump. Its second gate drives a reverse-blocking FET, and its current limit plus fault timer make the electronic breaker. The -2 suffix auto-retries after a fault, where the -1 latches off. H grade (-40 to 125 °C) because the I grade tops out at our 85 °C ambient. |
-| Q1 | Infineon IPD200N15N3 G | The surge pass FET. It sits in linear mode for the whole load dump: 8.4 W for 400 ms, 3.4 J. DPAK for the thermal mass, 150 V because its drain sees the TVS clamp voltage (88 V) during a spike. A 100 V part would run at 88 % of rating there. |
+| Q1 | Infineon IPB072N15N3 G | The surge pass FET. Rev A had the 20 mΩ DPAK (IPD200N15N3); simulation moved it up. The load dump is gentle (8.4 W for 400 ms), but a partial short that holds the bus just above the foldback point leaves the LTC4364 at its 2.5 A limit with ~25 V across Q1: about 64 W until the fault timer fires (~100 ms, 6.6 J). The DPAK's junction would pass 175 °C at 85 °C ambient; the D²PAK's ~3× larger die and heavier tab keep it near 130 °C (see the derating sheet). 150 V because with Q1 off its drain sees the TVS clamp, up to 99 V. |
 | Q2 | Infineon BSC060N10NS3 G | Reverse-blocking FET. It only ever switches fully on or off, so it doesn't need SOA. 6 mΩ keeps the forward drop small. 100 V covers a reversed supply plus the TVS clamp on a negative spike. |
-| D1 | Littelfuse SMCJ58CA | Bidirectional, so a reversed supply doesn't forward-bias it. The 58 V standoff equals the suppressed load-dump level, so it stays off during the 400 ms surge (the FET handles that) and only catches the fast 112 V spike. |
+| D1 | Littelfuse SMCJ58CA | Bidirectional, so a reversed supply doesn't forward-bias it. The 58 V standoff equals the suppressed load-dump level, so it stays off during the 400 ms surge (the FET handles that) and only catches the fast pulse 2a spike (140 V peak). |
 | F1 | Bourns MF-RX250/72 | Resettable backup fuse. Rated 72 V so it can hold off a load dump while tripped. Hold current at 85 °C is about 1.38 A against a 0.98 A worst-case load (71 %). The smaller 1.85 A part would sit at 96 % and could nuisance-trip hot. |
 | RSNS | 20 mΩ, 1206, 1 % | LTC4364 limits at 50 mV across it, giving 2.5 A. Folds back to 25 mV (1.25 A) when the output is shorted. The LTC6101 reads the same resistor for telemetry. |
 | D_VCC, Z_VCC | BAS21 + 62 V zener | Feeds the LTC4364 VCC pin. The series diode blocks reverse polarity at that pin, and the zener holds VCC below 62 V when the 88 V spike arrives. The UV divider hangs off this protected node too, so a reversed input can't drag the UV pin negative. |
@@ -61,31 +61,39 @@ only ships two TVS parts and neither fits.
 ## Sizing output
 
 ```
-Front end  FB divider (clamp)  147k / 4.99k          Vclamp 38.07 V nom, 37.2-39.0 V over FB tolerance
-Front end  UV divider          1.05M / 100k          turn-on 14.97 V at the connector
-Front end  Sense resistor      20 mΩ 1 % 1206        breaker 2.50 A, folds back to 1.25 A into a short
-Budget     Output power        13.3 W                5 V x 2 A + 3.3 V x 1 A
-Budget     Input current       0.56 A @ 28 V, 0.98 A @ 16 V   assumes 85% worst-case efficiency
-Front end  PTC                 MF-RX250/72           hold 1.38 A at 85 C vs 0.98 A worst load (71%)
-Front end  TVS                 SMCJ58CA              pulse 2a: 11.8 A, clamps at 87.8 V (worst-case part)
-Front end  Surge FET           IPD200N15N3 G         load dump: 20.4 V x 0.41 A = 8.4 W for 400 ms (3.36 J)
-Bucks      RT                  41.2k                 1 MHz
-5V0 buck   FB divider          887k / 169k           Vout 4.999 V
-5V0 buck   Min on-time check   132 ns at 38 V in     limit 50 ns worst case: OK
-5V0 buck   Inductor            SRP7028A-4R7M         ripple 0.92 App (46%), peak 2.46 A vs Isat 10 A, DCR loss 151 mW
-3V3 buck   FB divider          357k / 115k           Vout 3.283 V
-3V3 buck   Min on-time check   87 ns at 38 V in      limit 50 ns worst case: OK
-3V3 buck   Inductor            SRP7028A-4R7M         ripple 0.64 App (64%), peak 1.32 A vs Isat 10 A, DCR loss 38 mW
-Telemetry  IIN_MON             LTC6101               1.208 V/A, full scale 2.73 A
+Front end  FB divider (clamp)  147k / 4.99k                               Vclamp 38.07 V nom, 37.2-39.0 V over FB tolerance
+Front end  UV divider          1.05M / 100k                               turn-on 14.97 V at the connector
+Front end  Sense resistor      20 mΩ 1 % 1206                             breaker 2.50 A, folds back to 1.25 A into a short
+Budget     Output power        13.3 W                                     5 V x 2 A + 3.3 V x 1 A
+Budget     Input current       0.56 A @ 28 V, 0.98 A @ 16 V               assumes 85% worst-case efficiency
+Front end  PTC                 MF-RX250/72                                hold 1.38 A at 85 C vs 0.98 A worst load (71%)
+Front end  TVS                 SMCJ58CA                                   pulse 2a (140 V peak): 19.9 A, clamps at 99.1 V (worst-case part)
+Front end  Surge FET           Infineon IPB072N15N3 G (150 V, D2PAK)      load dump: 20.4 V x 0.41 A = 8.4 W for 400 ms (3.36 J)
+Front end  Reverse FET         Infineon BSC060N10NS3 G (100 V, SuperSO8)  sees at most 30 V reverse DC, 71 V on a negative spike
+Bucks      RT                  41.2k                                      1 MHz (46.5/f - 5.2 kΩ fit to ADI RT table)
+5V0 buck   FB divider          777k / 150k 0.1 %                          Vout 5.000 V
+5V0 buck   Min on-time check   132 ns at 38 V in                          limit 50 ns worst case: OK
+5V0 buck   Inductor            Bourns SRP7028A-4R7M                       datasheet rule 3.6 µH; ripple 0.92 App (46% of load), peak 2.46 A vs Isat 10 A, DCR loss 151 mW
+3V3 buck   FB divider          505k / 164k 0.1 %                          Vout 3.300 V
+3V3 buck   Min on-time check   87 ns at 38 V in                           limit 50 ns worst case: OK
+3V3 buck   Inductor            Bourns SRP7028A-4R7M                       datasheet rule 2.4 µH; ripple 0.64 App (64% of load), peak 1.32 A vs Isat 10 A, DCR loss 38 mW
+Telemetry  VBUS_MON            140k / 10k                                 full scale 49.5 V
+Telemetry  V5_MON              10k / 10k                                  full scale 6.6 V
+Telemetry  V3_MON              10k / 10k                                  full scale 6.6 V
+Telemetry  IIN_MON             LTC6101, Rin 100 Ω, Rout 6.04k             1.208 V/A, full scale 2.73 A
+Tuned      C_TMR / C_HGATE     6.8 µF / 2.2 nF                            set in simulation (docs/03-simulation.md)
+Tuned      C_SS / C_FF         4.7 nF / 22 pF                             set in simulation (docs/03-simulation.md)
 ```
 
-## Things I'm not sure about yet
+## Open items
 
-- The LT8641 feedback reference (0.800 V) is back-solved from ADI's own example
-  schematic (1 MΩ / 191 kΩ for a 5 V output), not read off the datasheet. The
-  simulation will confirm it.
+- ~~LT8641 feedback reference back-solved as 0.800 V.~~ Measured on the vendor
+  model: 0.809 V. Rev A's dividers would have put both rails 1.1 % high. The
+  dividers are now E192 0.1 % parts landing on 5.000 V and 3.300 V.
+- ~~3.3 V rail's 64 % inductor ripple might come in hot.~~ It's 4 mVpp at the
+  output in simulation, against a 20 mVpp limit.
 - The PTC hold-current derating at 85 °C (55 %) is a typical polymer-PTC curve.
   It needs checking against the Bourns MF-RX table.
-- The 3.3 V rail's 64 % inductor ripple is high but fine for a current-mode
-  part. If the ripple measurement comes in hot, the fix is a 6.8 µH part on
-  that rail only.
+- Absolute-maximum ratings in the derating sheet are from memory of the
+  datasheets' ratings tables. analog.com refused automated downloads from the
+  machine this was built on, so they need a pass against the PDFs before release.

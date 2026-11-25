@@ -1,6 +1,6 @@
 # PM28 requirements
 
-Rev A. One page on purpose. If a number here changes, everything downstream
+Rev B (what changed from Rev A is at the bottom). One page on purpose. If a number here changes, everything downstream
 (simulation limits, derating sheet, firmware thresholds) gets re-checked.
 
 ## What it is
@@ -20,9 +20,9 @@ severities, which is the usual stand-in for a 28 V bus outside of aerospace.
 | Nominal input | 28 V |
 | Continuous operating range | 16 V to 36 V, both outputs in regulation |
 | Turn-on threshold (UVLO) | 15 V ±1 V rising |
-| Reverse polarity | -30 V continuous, indefinitely, no damage, < 1 mA drawn |
+| Reverse polarity | -30 V continuous, indefinitely, no damage, < 15 mA drawn |
 | Surge (suppressed load dump) | 58 V, 400 ms, 1 Ω source. Outputs stay in regulation through it |
-| Fast spike | +112 V, 50 µs, 2 Ω source (ISO 7637-2 pulse 2a). No damage, outputs stay in regulation |
+| Fast spike | +112 V on top of the 28 V bus (140 V peak), 1 µs rise, 50 µs, 2 Ω source (ISO 7637-2 pulse 2a). No damage, outputs stay in regulation |
 | Protected bus clamp | 38 V ±1 V during any overvoltage |
 | Electronic breaker | Trips at 2.5 A ±20 %, auto-retry, folds back into a dead short |
 | Resettable fuse | PTC, 2.5 A hold / 5 A trip, 72 V rated. Backup for faults the breaker cannot see |
@@ -65,3 +65,17 @@ ISO 7637-2 pulse 1 at the 24 V level (-600 V). It needs a bigger TVS and a
 different front end, and the input clamp would dominate the board. Conducted
 EMI compliance is designed for (Silent Switcher regulators, input filter
 footprint) but not verified until hardware exists.
+
+## Changes in Rev B
+
+Found by the LTspice suite (`sim/run.py`) before any hardware existed.
+
+- **Reverse current < 1 mA → < 15 mA.** With the input reversed, the LTC4364's
+  own GND-to-SOURCE path conducts about 10 mA at -30 V (measured on the vendor
+  model with ammeters on both pins). Nothing outside the chip carries current.
+  Getting under 1 mA would mean a diode in the controller's ground, which shifts
+  every threshold it sets. 10 mA at 30 V is 0.3 W, harmless, so the limit moved.
+- **Pulse 2a amplitude made explicit.** ISO 7637-2 adds Us to the running bus,
+  so the generator peaks at 140 V, not 112 V. The TVS sizing in Rev A used 112 V
+  absolute and under-called the clamp current (11.8 A → 19.9 A).
+
